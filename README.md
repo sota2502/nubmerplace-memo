@@ -12,7 +12,7 @@
 
 ## セットアップ
 
-Node.js 24.22.1 以上（`.node-version`）と npm 11.21.1 以上が必要です。
+Node.js 24.22.1 以上（`.node-version`）と npm 11.19.1 以上が必要です（Vercel のビルド環境の npm に合わせています）。Vercel では `vercel.json` で `npm ci` を使います。
 
 1. Neon でデータベースを作成（Vercel の Storage → Neon からでも可）し、接続文字列を控える
 2. Google Cloud Console で OAuth クライアント（ウェブアプリケーション）を作成
