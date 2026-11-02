@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # 公開から14日経過した版のみ提案（.npmrc の min-release-age と揃える）
+    # セキュリティアップデートにはこの待機期間は適用されない
+    cooldown:
+      default-days: 14
+    groups:
+      dependencies:
+        patterns: ["*"]
