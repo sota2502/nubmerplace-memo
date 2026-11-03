@@ -30,6 +30,7 @@ export default async function SolvePage({ params }: { params: Promise<{ id: stri
         givens={parseGrid(puzzle.givens)}
         initialValues={progress ? parseGrid(progress.values) : Array(CELLS).fill(0)}
         initialMemos={progress?.memos.length === CELLS ? progress.memos : Array(CELLS).fill(0)}
+        initialElapsedSeconds={progress?.elapsedSeconds ?? 0}
       />
     </div>
   );

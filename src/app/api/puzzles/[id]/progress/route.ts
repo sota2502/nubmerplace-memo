@@ -25,11 +25,11 @@ export async function PUT(req: Request, { params }: RouteContext) {
   const puzzle = await prisma.puzzle.findUnique({ where: { id }, select: { givens: true } });
   if (!puzzle) return jsonError("問題が見つかりません", 404);
 
-  const { values, memos } = parsed.data;
+  const { values, memos, elapsedSeconds } = parsed.data;
   const progress = await prisma.progress.upsert({
     where: { userId_puzzleId: { userId, puzzleId: id } },
-    create: { userId, puzzleId: id, values, memos },
-    update: { values, memos },
+    create: { userId, puzzleId: id, values, memos, elapsedSeconds },
+    update: { values, memos, elapsedSeconds },
   });
   return NextResponse.json(progress);
 }

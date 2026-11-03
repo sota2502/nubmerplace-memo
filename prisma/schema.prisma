@@ -72,16 +72,18 @@ model Puzzle {
 }
 
 model Progress {
-  id        String   @id @default(cuid())
-  userId    String
-  puzzleId  String
+  id             String   @id @default(cuid())
+  userId         String
+  puzzleId       String
   // 81文字。'0' は未回答
-  values    String
+  values         String
   // 81要素。候補1..9をbit0..8で表すビットマスク
-  memos     Int[]
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  puzzle    Puzzle   @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
-  updatedAt DateTime @updatedAt
+  memos          Int[]
+  // 回答にかかった時間（秒）。ページ表示中のみ加算
+  elapsedSeconds Int      @default(0)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puzzle         Puzzle   @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, puzzleId])
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SudokuGrid from "./SudokuGrid";
 import NumberPad from "./NumberPad";
 import { useGridKeyboard } from "./useGridKeyboard";
+import { formatElapsed, useTimer } from "./useTimer";
 import { CELLS, findConflicts, isSolved, serializeGrid, toggleMemo, type Grid } from "@/lib/sudoku";
 
 type Mode = "answer" | "memo";
@@ -15,9 +16,16 @@ type Props = {
   givens: Grid;
   initialValues: Grid;
   initialMemos: number[];
+  initialElapsedSeconds: number;
 };
 
-export default function PuzzleSolver({ puzzleId, givens, initialValues, initialMemos }: Props) {
+export default function PuzzleSolver({
+  puzzleId,
+  givens,
+  initialValues,
+  initialMemos,
+  initialElapsedSeconds,
+}: Props) {
   const [board, setBoard] = useState<Board>({ values: initialValues, memos: initialMemos });
   const [history, setHistory] = useState<Board[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -27,6 +35,7 @@ export default function PuzzleSolver({ puzzleId, givens, initialValues, initialM
   const merged = useMemo(() => givens.map((g, i) => g || board.values[i]), [givens, board.values]);
   const conflicts = useMemo(() => findConflicts(merged), [merged]);
   const solved = useMemo(() => isSolved(merged), [merged]);
+  const { elapsed, setElapsed, visible } = useTimer(initialElapsedSeconds, !solved);
 
   const update = useCallback(
     (next: Board) => {
@@ -75,9 +84,39 @@ export default function PuzzleSolver({ puzzleId, givens, initialValues, initialM
   const onReset = () => {
     if (!confirm("回答とメモをすべて消去しますか？")) return;
     update({ values: Array(CELLS).fill(0), memos: Array(CELLS).fill(0) });
+    setElapsed(0);
   };
 
   useGridKeyboard({ selected, setSelected, onNumber, onClear, onToggleMode, onUndo });
+
+  // 保存時は最新の盤面と経過時間を使う（タイマーの毎秒の更新では保存しない）
+  const latest = useRef({ board, elapsed });
+  useEffect(() => {
+    latest.current = { board, elapsed };
+  });
+
+  const save = useCallback(
+    async (keepalive = false) => {
+      const { board, elapsed } = latest.current;
+      setSaveState("saving");
+      try {
+        const res = await fetch(`/api/puzzles/${puzzleId}/progress`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            values: serializeGrid(board.values),
+            memos: board.memos,
+            elapsedSeconds: elapsed,
+          }),
+          keepalive,
+        });
+        setSaveState(res.ok ? "saved" : "error");
+      } catch {
+        setSaveState("error");
+      }
+    },
+    [puzzleId],
+  );
 
   // 変更から少し待ってサーバーへ自動保存
   const isFirst = useRef(true);
@@ -87,20 +126,16 @@ export default function PuzzleSolver({ puzzleId, givens, initialValues, initialM
       return;
     }
     setSaveState("saving");
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/puzzles/${puzzleId}/progress`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ values: serializeGrid(board.values), memos: board.memos }),
-        });
-        setSaveState(res.ok ? "saved" : "error");
-      } catch {
-        setSaveState("error");
-      }
-    }, 800);
+    const timer = setTimeout(save, 800);
     return () => clearTimeout(timer);
-  }, [board, puzzleId]);
+  }, [board, save]);
+
+  // タブを離れたとき・ページを閉じるときに経過時間を保存
+  const wasVisible = useRef(visible);
+  useEffect(() => {
+    if (wasVisible.current && !visible) save(true);
+    wasVisible.current = visible;
+  }, [visible, save]);
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -117,6 +152,9 @@ export default function PuzzleSolver({ puzzleId, givens, initialValues, initialM
             </button>
           ))}
         </div>
+        <span className={`font-mono text-lg tabular-nums ${solved ? "text-green-600" : ""}`} aria-label="経過時間">
+          {formatElapsed(elapsed)}
+        </span>
         <span className="text-gray-500">
           {saveState === "saving" ? "保存中…" : saveState === "error" ? "保存に失敗しました" : "保存済み"}
         </span>
@@ -131,7 +169,9 @@ export default function PuzzleSolver({ puzzleId, givens, initialValues, initialM
         onSelect={setSelected}
       />
 
-      {solved && <p className="text-lg font-bold text-green-600">完成しました！</p>}
+      {solved && (
+        <p className="text-lg font-bold text-green-600">完成しました！（{formatElapsed(elapsed)}）</p>
+      )}
 
       <NumberPad onNumber={onNumber} onClear={onClear} />
 

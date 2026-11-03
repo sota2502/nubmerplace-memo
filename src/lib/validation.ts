@@ -10,4 +10,5 @@ export const puzzleInput = z.object({
 export const progressInput = z.object({
   values: gridString,
   memos: z.array(z.number().int().min(0).max(511)).length(81),
+  elapsedSeconds: z.number().int().min(0).max(100_000_000).default(0),
 });
