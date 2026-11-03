@@ -8,6 +8,11 @@ updates:
     # セキュリティアップデートにはこの待機期間は適用されない
     cooldown:
       default-days: 14
+    # メジャー更新は自動提案しない（動作確認しながら手動で行う）
+    # @types/node もこれにより実行環境の Node 24 系に留まる
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       dependencies:
         patterns: ["*"]
