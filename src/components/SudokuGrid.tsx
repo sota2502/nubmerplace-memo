@@ -16,7 +16,7 @@ export default function SudokuGrid({ givens, values, memos, selected, conflicts,
   const selectedValue = selected !== null ? valueAt(selected) : 0;
 
   return (
-    <div className="grid aspect-square w-full max-w-[min(90vw,32rem)] grid-cols-9 border-2 border-foreground select-none">
+    <div className="grid aspect-square w-full max-w-[min(90vw,32rem)] grid-cols-9 grid-rows-9 border-2 border-foreground select-none">
       {givens.map((_, i) => {
         const value = valueAt(i);
         const isGiven = givens[i] !== 0;
@@ -48,7 +48,7 @@ export default function SudokuGrid({ givens, values, memos, selected, conflicts,
             key={i}
             type="button"
             onClick={() => onSelect(i)}
-            className={`relative flex items-center justify-center ${bg} ${border} ${color} text-[min(5vw,1.75rem)] leading-none`}
+            className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden ${bg} ${border} ${color} text-[min(5vw,1.75rem)] leading-none`}
             aria-label={`${rowOf(i) + 1}行${colOf(i) + 1}列`}
           >
             {value !== 0 ? (
